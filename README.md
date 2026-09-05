@@ -5,7 +5,7 @@ PixPop 是一个基于 Electron 的 Windows 桌面解压玩具应用。电脑通
 ## 当前功能
 
 - 透明、无边框、始终置顶的桌面悬浮层
-- 悬浮层始终鼠标穿透，不影响其他应用操作
+- 透明区域保持鼠标穿透，悬浮物件本身可接收鼠标操作
 - Windows 系统托盘图标和设置入口
 - 支持三种玩具：
   - 幽灵杆
@@ -23,7 +23,7 @@ PixPop 是一个基于 Electron 的 Windows 桌面解压玩具应用。电脑通
 - 键盘输入后立即隐藏悬浮物件
 - 连续 2 秒无键盘输入后，允许通过摇杆双击召回物件
 - 首次授权串口后，启动时自动尝试重连 ESP32
-- 支持透明 PNG 素材和 CSS/透明素材动画
+- 支持透明 PNG 素材和透明素材动画
 
 ## 玩具特效
 
@@ -123,6 +123,8 @@ npm start
 ├── effect.png                 # 幽灵杆特效参考图
 ├── assets/
 │   ├── ghost-cutout.png       # 去除背景后的幽灵杆素材
+│   ├── radish-knife.png       # 透明萝卜刀素材
+│   ├── squeeze-toy.png        # 透明捏捏乐素材
 │   └── tray-icon.png          # 系统托盘图标
 ├── renderer/
 │   ├── settings.html          # 设置窗口
@@ -130,7 +132,8 @@ npm start
 │   ├── overlay.html           # 全屏透明悬浮层
 │   └── overlay.js             # 三种玩具的独立特效代码
 └── scripts/
-    └── process_images.py      # 图片处理和幽灵杆抠图工具
+    ├── process_images.py      # 图片处理和幽灵杆抠图工具
+    └── generate_toy_assets.py # 生成萝卜刀和捏捏乐素材
 ```
 
 ## 图片处理
@@ -152,7 +155,7 @@ python scripts/process_images.py cutout-ghost --source ghostfinal.png --output a
 ## 当前限制和后续工作
 
 - 摄像头开关目前可以申请摄像头权限，但尚未接入人脸关键点识别和真正的头部跟随。
-- 萝卜刀和捏捏乐目前使用第一阶段的 CSS 3D 风格素材，后续可以替换为高质量透明 PNG、WebP 或序列帧。
+- 萝卜刀和捏捏乐目前使用第一阶段生成的透明 3D 风格 PNG，后续可以替换为更高质量的 WebP 或序列帧。
 - 当前悬浮层主要使用主显示器，多显示器位置和 DPI 适配仍需完善。
 - 当前未制作 Windows 安装程序。
 

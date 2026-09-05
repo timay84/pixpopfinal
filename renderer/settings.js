@@ -10,7 +10,7 @@ let config; let port = null; let reader = null; let buffer = ''; let previousPre
 
 function renderPreview() {
   const toy = $('toy').value; const box = $('preview');
-  box.innerHTML = toy === 'ghost' ? '<img src="../assets/ghost-cutout.png" alt="幽灵杆预览">' : toy === 'radish' ? '<div class="toy-art"><div class="knife"></div><div class="toy-name">萝卜刀</div></div>' : '<div class="toy-art"><div class="squeeze"></div><div class="toy-name">捏捏乐</div></div>';
+  box.innerHTML = toy === 'ghost' ? '<img src="../assets/ghost-cutout.png" alt="幽灵杆预览">' : toy === 'radish' ? '<img class="toy-sprite" src="../assets/radish-knife.png" alt="萝卜刀预览">' : '<img class="toy-sprite" src="../assets/squeeze-toy.png" alt="捏捏乐预览">';
 }
 function renderMapping() {
   const list = effects[$('toy').value];

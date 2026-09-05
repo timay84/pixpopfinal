@@ -2,6 +2,11 @@ const { app, BrowserWindow, ipcMain, screen, Tray, Menu, nativeImage, session } 
 const path = require('path');
 const fs = require('fs');
 
+// Keep development launches from competing for Electron's cache and tray.
+const hasSingleInstanceLock = app.requestSingleInstanceLock();
+if (!hasSingleInstanceLock) process.exit(0);
+app.setPath('cache', path.join(app.getPath('userData'), 'pixpop-cache'));
+
 let settingsWindow;
 let overlayWindow;
 let tray;
@@ -30,9 +35,17 @@ function saveConfig(config) {
   fs.writeFileSync(configPath(), JSON.stringify(config, null, 2));
 }
 
+function virtualDesktopBounds() {
+  const displays = screen.getAllDisplays();
+  const left = Math.min(...displays.map(display => display.bounds.x));
+  const top = Math.min(...displays.map(display => display.bounds.y));
+  const right = Math.max(...displays.map(display => display.bounds.x + display.bounds.width));
+  const bottom = Math.max(...displays.map(display => display.bounds.y + display.bounds.height));
+  return { x: left, y: top, width: right - left, height: bottom - top };
+}
+
 function createOverlay() {
-  const display = screen.getPrimaryDisplay();
-  const { x, y, width, height } = display.bounds;
+  const { x, y, width, height } = virtualDesktopBounds();
   overlayWindow = new BrowserWindow({
     x, y, width, height, frame: false, transparent: true, resizable: false,
     movable: false, focusable: false, skipTaskbar: true, hasShadow: false,
@@ -42,6 +55,10 @@ function createOverlay() {
   overlayWindow.setIgnoreMouseEvents(true, { forward: true });
   overlayWindow.loadFile(path.join(__dirname, 'renderer', 'overlay.html'));
   overlayWindow.on('closed', () => { overlayWindow = null; });
+}
+
+function resizeOverlay() {
+  if (overlayWindow && !overlayWindow.isDestroyed()) overlayWindow.setBounds(virtualDesktopBounds());
 }
 
 function showSettings() {
@@ -79,6 +96,11 @@ ipcMain.on('settings-close', () => { settingsWindow?.hide(); overlayWindow?.webC
 ipcMain.on('app-quit', () => { quitting = true; app.quit(); });
 ipcMain.on('joystick-event', (_event, data) => overlayWindow?.webContents.send('joystick-event', data));
 ipcMain.on('overlay-command', (_event, command) => overlayWindow?.webContents.send('overlay-command', command));
+ipcMain.on('overlay-mouse-events', (_event, interactive) => {
+  if (overlayWindow && !overlayWindow.isDestroyed()) {
+    overlayWindow.setIgnoreMouseEvents(!interactive, { forward: true });
+  }
+});
 
 app.whenReady().then(() => {
   // Web Serial in Electron requires the main process to approve a selected device.
@@ -103,7 +125,12 @@ app.whenReady().then(() => {
   ]));
   tray.on('click', showSettings);
   startKeyboardWatcher();
+  screen.on('display-added', resizeOverlay);
+  screen.on('display-removed', resizeOverlay);
+  screen.on('display-metrics-changed', resizeOverlay);
 });
+
+app.on('second-instance', () => showSettings());
 
 app.on('before-quit', () => {
   quitting = true;
