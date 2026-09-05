@@ -126,11 +126,12 @@ npm start
 ├── ghost.png                  # 原始幽灵杆素材
 ├── ghostfinal.png             # 幽灵杆抠图来源素材
 ├── effect.png                 # 幽灵杆特效参考图
+├── smallicon.png              # 当前系统托盘图标
 ├── assets/
 │   ├── ghost-cutout.png       # 去除背景后的幽灵杆素材
 │   ├── radish-knife.png       # 透明萝卜刀素材
 │   ├── squeeze-toy.png        # 透明捏捏乐素材
-│   └── tray-icon.png          # 系统托盘图标
+│   └── tray-icon.png          # 备用系统托盘图标
 ├── renderer/
 │   ├── settings.html          # 设置窗口
 │   ├── settings.js            # 设置、串口读取和十种操作识别

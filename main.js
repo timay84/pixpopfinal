@@ -113,7 +113,7 @@ app.whenReady().then(() => {
   createOverlay();
   createSettings();
   settingsWindow.hide();
-  const icon = nativeImage.createFromPath(path.join(__dirname, 'assets', 'tray-icon.png'));
+  const icon = nativeImage.createFromPath(path.join(__dirname, 'smallicon.png'));
   tray = new Tray(icon);
   tray.setToolTip('PixPop 智能解压玩具');
   tray.setContextMenu(Menu.buildFromTemplate([
