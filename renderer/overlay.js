@@ -3,6 +3,7 @@ const stage=document.getElementById('stage');
 let mouseEventsInteractive=false; let suppressMouseEvents=false;
 let moveDirection=''; let moveFrame; let moveX=0; let moveY=0;
 const movement={N:[0,-1],NE:[.707,-.707],E:[1,0],SE:[.707,.707],S:[0,1],SW:[-.707,.707],W:[-1,0],NW:[-.707,-.707]};
+const moveSpeed=8.4;
 function updateMouseEvents(){
   const overToy=!hidden&&toy?.matches(':hover');
   if(!overToy)suppressMouseEvents=false;
@@ -18,8 +19,8 @@ function moveToy(){
   if(!vector||hidden){moveFrame=null;return;}
   const width=toy.offsetWidth||180; const height=toy.offsetHeight||260;
   const baseLeft=window.innerWidth-window.innerWidth*.07-width; const baseTop=window.innerHeight-window.innerHeight*.05-height;
-  moveX=Math.max(-baseLeft,Math.min(window.innerWidth-width-baseLeft,moveX+vector[0]*2.8));
-  moveY=Math.max(-baseTop,Math.min(window.innerHeight-height-baseTop,moveY+vector[1]*2.8));
+  moveX=Math.max(-baseLeft,Math.min(window.innerWidth-width-baseLeft,moveX+vector[0]*moveSpeed));
+  moveY=Math.max(-baseTop,Math.min(window.innerHeight-height-baseTop,moveY+vector[1]*moveSpeed));
   toy.style.setProperty('--move-x',`${moveX}px`);toy.style.setProperty('--move-y',`${moveY}px`);
   moveFrame=requestAnimationFrame(moveToy);
 }

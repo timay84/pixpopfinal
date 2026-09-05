@@ -15,7 +15,7 @@ function renderPreview() {
 function renderMapping() {
   const list = effects[$('toy').value];
   $('mapping').innerHTML = directions.map(key => `<div class="map-row"><b>${labels[key]}</b><select data-action="${key}">${list.map(([value, label]) => `<option value="${value}">${label}</option>`).join('')}</select></div>`).join('');
-  directions.forEach(key => { const el = document.querySelector(`[data-action="${key}"]`); el.value = config.actions[key] || effects[$('toy').value][0][0]; });
+  directions.forEach(key => { const el = document.querySelector(`[data-action="${key}"]`); const selected = config.actions[key]; el.value = list.some(([value]) => value === selected) ? selected : list[0][0]; config.actions[key] = el.value; });
 }
 function applyMode(mode) {
   const toy = $('toy').value; const names = effects[toy].map(x => x[0]);
