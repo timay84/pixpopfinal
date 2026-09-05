@@ -1,293 +1,160 @@
-# Desktop Pet
+# PixPop 智能解压玩具
 
-A floating desktop companion dog built with Electron. Sits, licks, lies down, and responds to interactions — stays on top of your workspace.
+PixPop 是一个基于 Electron 的 Windows 桌面解压玩具应用。电脑通过 USB 连接 ESP32-S3，ESP32-S3 接收 PS2/HW504 摇杆输入，PixPop 将摇杆动作转换为桌面上的夸张动画特效。
 
-## Features
+## 当前功能
 
-- **Floating on desktop** — transparent, frameless, always-on-top
-- **Idle animations** — sits quietly, periodically licks
-- **Auto lie-down** — after 30s idle, lies down with a butterfly
-- **Draggable** — drag anywhere on screen
-- **Click bubble** — click the dog for a speech bubble
-- **System tray** — right-click to quit
+- 透明、无边框、始终置顶的桌面悬浮层
+- 悬浮层始终鼠标穿透，不影响其他应用操作
+- Windows 系统托盘图标和设置入口
+- 支持三种玩具：
+  - 幽灵杆
+  - 萝卜刀
+  - 捏捏乐
+- 支持十种摇杆操作：
+  - 上、下、左、右
+  - 左上、左下、右上、右下
+  - 摇杆单击
+  - 摇杆双击
+- 每种玩具拥有独立的动画特效代码
+- 支持默认模式、酷炫模式和解压模式
+- 用户可以为十种操作分别选择不同特效
+- 配置保存到本地，下次启动自动读取
+- 键盘输入后立即隐藏悬浮物件
+- 连续 2 秒无键盘输入后，允许通过摇杆双击召回物件
+- 首次授权串口后，启动时自动尝试重连 ESP32
+- 支持透明 PNG 素材和 CSS/透明素材动画
 
-## Tech Stack
+## 玩具特效
 
-- Electron 28
-- HTML5 Canvas
-- State machine animation
+### 幽灵杆
 
-## Quick Start
+- 漂浮和弹跳
+- 星星爆散
+- 幽灵冲刺
+- 灵魂爆炸
+- 灵魂飘落
+- 惊喜闪现
 
-```bash
-npm install
-npm start
-```
+### 萝卜刀
 
-## Build
+- 桌面裂缝
+- 飞刀雨
+- 旋转挥刀
+- 刀光冲击
+- 刀片爆散
+- 惊喜闪现
 
-```bash
-npm run build:win      # Windows: portable .exe + NSIS installer
-npm run build:linux    # Linux: AppImage + deb
-npm run build:mac      # macOS: DMG + zip
-```
+### 捏捏乐
 
-Artifacts in `dist/`. CI: `.github/workflows/build.yml`.
-
-## Project Structure
-
-```
-├── main.js              # Electron main process (tray, window)
-├── preload.js           # contextBridge for drag IPC
-├── scripts/
-│   ├── process_images.py  # Image processing pipeline
-│   └── after-pack.js      # macOS ad-hoc code signing
-├── renderer/
-│   ├── index.html       # Canvas host
-│   ├── app.js           # Entry point, image loading
-│   ├── state-machine.js # State machine (idle/licking/lying/bouncing)
-│   ├── renderer.js      # Canvas draw loop
-│   ├── interactions.js  # Mouse click/drag handling
-│   └── bubble.js        # Speech bubble overlay
-├── assets/
-│   ├── *.png            # Runtime sprites
-│   ├── *-source.png     # Source images
-│   └── tray-icon.png    # System tray icon
-└── package.json
-```
-
-## Image Pipeline
-
-Source images are RGB with solid backgrounds. Runtime sprites are RGBA with transparency.
-
-```bash
-# Batch convert source images
-python3 scripts/process_images.py batch --source-dir assets --output-dir assets
-
-# Remove watermarks
-python3 scripts/process_images.py clean assets/*.png --in-place
-
-# Generate tray icon
-python3 scripts/process_images.py trayicon --base assets/base.png --output assets/tray-icon.png --size 64
-
-# Convert a single image
-python3 scripts/process_images.py convert assets/sit-source.png assets/base.png
-```
-
-Requirements: Python 3.12+ with Pillow (`pip install pillow`).
-
-Pipeline steps:
-1. Open source RGB image
-2. Background removal: pixels where R, G, B > 240 are set to transparent
-3. Watermark removal: bottom-right corner cleared
-4. Save as RGBA PNG
-
-`--bg-threshold` adjusts sensitivity (default 240, lower = more aggressive).
-
-## Platform Notes
-
-### WSL2
-Tested with WSLg. GPU sandbox warnings are harmless.
-
-### Windows Install Guide
-
-**Portable (.exe)**
-
-Download `Desktop-Pet-x.x.x.exe`, double-click to run. No installation needed.
-
-**NSIS Installer**
-
-Download `Desktop-Pet-Setup-x.x.x.exe`, run the installer, follow the prompts. Creates Start Menu shortcuts.
-
-### Linux Install Guide
-
-**AppImage (Recommended)**
-
-1. Download `Desktop-Pet-x.x.x.AppImage`
-2. Make it executable: `chmod +x Desktop-Pet-*.AppImage`
-3. Double-click or run: `./Desktop-Pet-*.AppImage`
-
-**deb (System install)**
-
-```bash
-sudo dpkg -i desktop-pet_*_amd64.deb
-# or: sudo apt install ./desktop-pet_*_amd64.deb
-```
-
-Installs to system with launcher entry.
-
-### macOS Install Guide
-
-Built without Apple Developer signing. First launch requires manual approval.
-
-**DMG (Recommended)**
-
-1. Download `Desktop-Pet-x.x.x-arm64.dmg`
-2. Double-click to mount the DMG
-3. Drag `Desktop Pet` into the `Applications` folder
-4. Open **Terminal** (search in Launchpad)
-5. Run: `xattr -cr /Applications/Desktop\ Pet.app`
-6. In Applications, **right-click** `Desktop Pet` → **Open**
-7. Click **Open** in the dialog
-
-After this, double-click works normally.
-
-**ZIP (Portable)**
-
-1. Download `Desktop-Pet-x.x.x-arm64-mac.zip`
-2. Double-click to extract `Desktop Pet.app`
-3. Open Terminal, type `xattr -cr` (with trailing space)
-4. Drag `Desktop Pet.app` from Finder into Terminal, press Enter
-5. **Right-click** `Desktop Pet.app` → **Open**
-6. Click **Open** in the dialog
-
-> If prompted "unidentified developer": **System Settings → Privacy & Security** → click "Open Anyway".
-
-## License
-
-MIT
-
----
-
-# 桌面宠物
-
-基于 Electron 的桌面漂浮小狗伴侣。静坐、伸舌、躺倒，响应互动，始终在你的工作区顶层。
-
-## 功能
-
-- **桌面悬浮** — 透明无边框，始终置顶
-- **空闲动画** — 静坐，间歇伸舌
-- **自动躺倒** — 30 秒无互动后躺下，蝴蝶相伴
-- **可拖拽** — 拖到屏幕任意位置
-- **点击气泡** — 点击小狗弹出爱心文案
-- **系统托盘** — 右键退出程序
-
-## 技术栈
-
-- Electron 28
-- HTML5 Canvas
-- 状态机动画
+- 弹性爆开
+- 果冻星雨
+- 夸张挤压
+- 彩色波纹
+- 糖果喷发
+- 惊喜闪现
 
 ## 快速开始
 
+要求：
+
+- Windows
+- Node.js
+- npm
+- ESP32-S3 和已连接的摇杆模块
+
+安装依赖：
+
 ```bash
 npm install
+```
+
+启动应用：
+
+```bash
 npm start
 ```
 
-## 构建
+当前版本主要用于本机开发和测试，暂不要求制作 Windows 安装程序。
 
-```bash
-npm run build:win      # Windows: 便携版 .exe + NSIS 安装程序
-npm run build:linux    # Linux: AppImage + deb
-npm run build:mac      # macOS: DMG + zip
+## ESP32 串口协议
+
+项目中的 `esp32code.cpp` 默认使用以下配置：
+
+- 波特率：`115200`
+- 每行一条 JSON 数据
+- X 轴：GPIO1
+- Y 轴：GPIO2
+- SW 按键：GPIO3
+- 摇杆按下时 `sw` 为 `1`
+
+推荐数据格式：
+
+```json
+{"x":2048,"y":2048,"sw":0,"direction":"NE"}
 ```
 
-产物在 `dist/` 目录。CI 工作流见 `.github/workflows/build.yml`。
+程序也支持通过 X/Y 轴自动计算方向。当没有 `direction` 字段时，电脑端会按照中心值 `2048` 和死区 `330` 进行八方向判断。
+
+首次连接时，需要在设置窗口点击“连接 ESP32”并授权串口。这是 Windows/Electron 对串口设备的安全限制。完成授权后，后续启动会自动尝试连接已经授权的设备。
+
+## 配置说明
+
+设置窗口可以配置：
+
+- ESP32 波特率
+- 当前使用的玩具
+- 十种摇杆操作对应的动画特效
+- 默认、酷炫、解压三种快速模式
+- 摄像头访问权限开关
+
+设置保存后写入 Electron 用户数据目录中的 `pixpop-config.json`。
 
 ## 项目结构
 
-```
-├── main.js              # Electron 主进程（托盘、窗口）
-├── preload.js           # contextBridge 拖拽 IPC
-├── scripts/
-│   ├── process_images.py  # 图片处理管线
-│   └── after-pack.js      # macOS 临时签名
-├── renderer/
-│   ├── index.html       # 画布容器
-│   ├── app.js           # 入口、图片加载
-│   ├── state-machine.js # 状态机（空闲/伸舌/躺倒/跳动）
-│   ├── renderer.js      # Canvas 渲染循环
-│   ├── interactions.js  # 鼠标点击/拖拽
-│   └── bubble.js        # 气泡文案
+```text
+├── main.js                    # Electron 主进程、托盘、窗口和 IPC
+├── preload.js                 # contextBridge 安全接口
+├── package.json               # Electron 和运行依赖
+├── esp32code.cpp              # ESP32-S3 摇杆示例程序
+├── index.html                 # 原始 ESP32 串口检验页面
+├── ghost.png                  # 原始幽灵杆素材
+├── ghostfinal.png             # 幽灵杆抠图来源素材
+├── effect.png                 # 幽灵杆特效参考图
 ├── assets/
-│   ├── *.png            # 运行时精灵图
-│   ├── *-source.png     # 源图片
-│   └── tray-icon.png    # 托盘图标
-└── package.json
+│   ├── ghost-cutout.png       # 去除背景后的幽灵杆素材
+│   └── tray-icon.png          # 系统托盘图标
+├── renderer/
+│   ├── settings.html          # 设置窗口
+│   ├── settings.js            # 设置、串口读取和十种操作识别
+│   ├── overlay.html           # 全屏透明悬浮层
+│   └── overlay.js             # 三种玩具的独立特效代码
+└── scripts/
+    └── process_images.py      # 图片处理和幽灵杆抠图工具
 ```
 
-## 图片管线
+## 图片处理
 
-源图为带背景的 RGB 图片，运行时精灵图为透明背景的 RGBA 图片。
+项目中的幽灵杆抠图工具使用 Pillow。安装 Pillow：
 
 ```bash
-# 批量转换源图
-python3 scripts/process_images.py batch --source-dir assets --output-dir assets
-
-# 去除水印
-python3 scripts/process_images.py clean assets/*.png --in-place
-
-# 生成托盘图标
-python3 scripts/process_images.py trayicon --base assets/base.png --output assets/tray-icon.png --size 64
-
-# 单张转换
-python3 scripts/process_images.py convert assets/sit-source.png assets/base.png
+python -m pip install Pillow
 ```
 
-依赖：Python 3.12+ 和 Pillow（`pip install pillow`）。
+根据 `ghostfinal.png` 重新生成透明幽灵杆素材：
 
-处理流程：
-1. 打开源 RGB 图片
-2. 去背景：R、G、B 均大于 240 的像素设为透明
-3. 去水印：清除右下角水印区域
-4. 保存为 RGBA PNG
+```bash
+python scripts/process_images.py cutout-ghost --source ghostfinal.png --output assets/ghost-cutout.png
+```
 
-`--bg-threshold` 调整去背景敏感度（默认 240，数值越低越激进）。
+输出文件为带透明通道的 RGBA PNG，不包含棋盘格或矩形背景。
 
-## 平台说明
+## 当前限制和后续工作
 
-### WSL2
-通过 WSLg 显示 GUI，GPU 沙箱警告无害。
-
-### Windows 安装指南
-
-**便携版 (.exe)**
-
-下载 `Desktop-Pet-x.x.x.exe`，双击即运行，无需安装。
-
-**安装版 (NSIS)**
-
-下载 `Desktop-Pet-Setup-x.x.x.exe`，运行安装程序，按提示完成。会创建开始菜单快捷方式。
-
-### Linux 安装指南
-
-**AppImage（推荐，绿色版）**
-
-
-
-**deb（系统安装）**
-
-
-
-安装后可在启动器中找到。
-
-### macOS 安装指南
-
-未签名应用，首次打开需手动允许。提供两种格式。
-
-**DMG（推荐，简单）**
-
-1. 下载 `Desktop-Pet-x.x.x-arm64.dmg`
-2. 双击打开 DMG 文件
-3. 将 `Desktop Pet` 拖入 `Applications` 文件夹
-4. 打开 **终端**（在启动台搜索"终端"）
-5. 粘贴并回车：`xattr -cr /Applications/Desktop\ Pet.app`
-6. 在 Applications 中**右键**点击 `Desktop Pet` → **打开**
-7. 弹出对话框中点击 **打开**
-
-设置一次后直接双击即可运行。
-
-**ZIP（便携）**
-
-1. 下载 `Desktop-Pet-x.x.x-arm64-mac.zip`
-2. 双击解压得到 `Desktop Pet.app`（可放桌面或任意位置）
-3. 打开终端，输入 `xattr -cr`（注意后面有空格，不要回车）
-4. 将 `Desktop Pet.app` 从访达拖入终端窗口，按回车
-5. **右键**点击 `Desktop Pet.app` → **打开**
-6. 弹出对话框中点击 **打开**
-
-> 如果提示"无法验证开发者"：**系统设置 → 隐私与安全性** → 点击"仍要打开"。
+- 摄像头开关目前可以申请摄像头权限，但尚未接入人脸关键点识别和真正的头部跟随。
+- 萝卜刀和捏捏乐目前使用第一阶段的 CSS 3D 风格素材，后续可以替换为高质量透明 PNG、WebP 或序列帧。
+- 当前悬浮层主要使用主显示器，多显示器位置和 DPI 适配仍需完善。
+- 当前未制作 Windows 安装程序。
 
 ## 许可证
 
