@@ -74,6 +74,8 @@ function createSettings() {
     title: 'PixPop 智能解压玩具', backgroundColor: '#0b1020',
     webPreferences: { preload: path.join(__dirname, 'preload.js'), contextIsolation: true, nodeIntegration: false }
   });
+  settingsWindow.removeMenu();
+  settingsWindow.setMenuBarVisibility(false);
   settingsWindow.loadFile(path.join(__dirname, 'renderer', 'settings.html'));
   settingsWindow.on('closed', () => { settingsWindow = null; overlayWindow?.webContents.send('overlay-show'); });
 }
