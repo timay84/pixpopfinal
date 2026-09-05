@@ -4,6 +4,7 @@ let mouseEventsInteractive=false; let suppressMouseEvents=false;
 let moveDirection=''; let moveFrame; let moveX=0; let moveY=0;
 const movement={N:[0,-1],NE:[.707,-.707],E:[1,0],SE:[.707,.707],S:[0,1],SW:[-.707,.707],W:[-1,0],NW:[-.707,-.707]};
 const moveSpeed=8.4;
+const spinOrder=['N','NE','E','SE','S','SW','W','NW']; let spinDirection=''; let spinSteps=0; let spinEffectActive=false; let spinEffectTimer;
 function updateMouseEvents(){
   const overToy=!hidden&&toy?.matches(':hover');
   if(!overToy)suppressMouseEvents=false;
@@ -25,9 +26,20 @@ function moveToy(){
   moveFrame=requestAnimationFrame(moveToy);
 }
 function setMoveDirection(direction){moveDirection=movement[direction]?direction:'';if(moveDirection&&!moveFrame)moveFrame=requestAnimationFrame(moveToy);}
+function trackClockwiseSpin(direction){
+  if(!direction){spinDirection='';spinSteps=0;return false;}
+  if(!spinDirection){spinDirection=direction;return false;}
+  const from=spinOrder.indexOf(spinDirection); const to=spinOrder.indexOf(direction); let delta=(to-from+8)%8;
+  if(delta>4)delta-=8;
+  spinDirection=direction;
+  if(delta<0){spinSteps=0;return false;}
+  spinSteps+=delta;
+  if(spinSteps<24)return false;
+  spinSteps=0;return true;
+}
 function particleBurst(count=24,color){for(let i=0;i<count;i++){const p=document.createElement('i');p.className='particle';if(color)p.style.background=color;p.style.left=`${50+Math.random()*8-4}vw`;p.style.top=`${42+Math.random()*10-5}vh`;p.style.setProperty('--dx',`${(Math.random()-.5)*70}vw`);p.style.setProperty('--dy',`${(Math.random()-.5)*65}vh`);stage.append(p);p.addEventListener('animationend',()=>p.remove());}}
 function effect(name){
-  if(!toy||hidden)return; toyArt.classList.remove('shake','slash','pop','squish'); void toyArt.offsetWidth;
+  if(!toy||hidden)return; if(!spinEffectActive||name==='spin-crazy')toyArt.classList.remove('shake','slash','pop','squish','spin-crazy'); void toyArt.offsetWidth;
   if(name==='ghost-float'){toyArt.classList.add('pop');}
   else if(name==='ghost-stars'){particleBurst(30,'#ffd166');toyArt.classList.add('shake');}
   else if(name==='ghost-dash'){toyArt.classList.add('slash');particleBurst(12,'#70e8ff');}
@@ -44,6 +56,11 @@ function effect(name){
   else if(name==='squeeze-wave'){toyArt.classList.add('shake');particleBurst(18,'#70e8ff');}
   else if(name==='squeeze-burst'||name==='surprise'){toyArt.classList.add('pop');particleBurst(55,config.toy==='squeeze'?'#ff76c8':'#c9a7ff');}
   else if(name==='hold-squish'){toyArt.classList.add('squish');}
+  else if(name==='spin-crazy'){
+    spinEffectActive=true;clearTimeout(spinEffectTimer);spinEffectTimer=setTimeout(()=>{spinEffectActive=false;toyArt.classList.remove('spin-crazy');},2000);
+    toyArt.classList.add('spin-crazy');particleBurst(90,'#70e8ff');
+    const flash=document.createElement('i');flash.className='flash';stage.append(flash);flash.addEventListener('animationend',()=>flash.remove());
+  }
 }
 async function stopCamera(){clearTimeout(cameraTimer);if(cameraStream)cameraStream.getTracks().forEach(track=>track.stop());cameraStream=null;faceDetector=null;}
 async function startCamera(){
@@ -63,7 +80,7 @@ async function trackHead(video){
 window.addEventListener('mousemove',updateMouseEvents);
 window.addEventListener('blur',()=>{suppressMouseEvents=true;mouseEventsInteractive=false;window.pixpop.setOverlayMouseEvents(false);});
 window.pixpop.loadConfig().then(async c=>{config=c;toy=document.getElementById('toy');renderToy();toy.addEventListener('click',()=>{suppressMouseEvents=true;mouseEventsInteractive=false;window.pixpop.setOverlayMouseEvents(false);});await startCamera();setTimeout(show,700);});
-window.pixpop.onJoystickEvent(data=>{if(data.kind==='direction'){setMoveDirection(data.value);if(data.value)effect(config.actions[data.value]);}if(data.kind==='action'){if(data.value==='DOUBLE'&&eligible){show();effect(config.actions.DOUBLE||'surprise');}else if(data.value==='SINGLE')effect(config.actions.SINGLE);else if(data.value==='LONG')effect('hold-squish');}});
+window.pixpop.onJoystickEvent(data=>{if(data.kind==='direction'){setMoveDirection(data.value);const completed=trackClockwiseSpin(data.value);if(completed)effect('spin-crazy');else if(data.value&&!spinEffectActive)effect(config.actions[data.value]);}if(data.kind==='action'){if(data.value==='DOUBLE'&&eligible){show();effect(config.actions.DOUBLE||'surprise');}else if(data.value==='SINGLE'&&!spinEffectActive)effect(config.actions.SINGLE);else if(data.value==='LONG'&&!spinEffectActive)effect('hold-squish');}});
 window.pixpop.onOverlayCommand(async command=>{if(command.type==='config'){config=command.config;renderToy();await stopCamera();await startCamera();show();}});
 window.pixpop.onKeyboardActivity(()=>{hide();eligible=false;clearTimeout(eligibilityTimer);eligibilityTimer=setTimeout(()=>{eligible=true;},2000);});
 window.pixpop.onOverlayHide(()=>hide()); window.pixpop.onOverlayShow(()=>show());
