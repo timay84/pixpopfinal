@@ -22,7 +22,8 @@ function applyMode(mode) {
   const tables = {
     default: [0,1,2,3,4,1,2,3,0,5],
     cool: [2,3,1,4,2,3,1,4,2,5],
-    relief: [4,4,3,4,4,3,4,3,0,5]
+    relief: [4,4,3,4,4,3,4,3,0,5],
+    gentle: [0,0,0,0,0,0,0,0,0,5]
   };
   directions.forEach((key, i) => config.actions[key] = names[tables[mode][i] % names.length]);
   config.mode = mode; renderMapping(); document.querySelectorAll('.mode').forEach(b => b.classList.toggle('active', b.dataset.mode === mode));
