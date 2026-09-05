@@ -27,7 +27,7 @@ function moveToy(){
 function setMoveDirection(direction){moveDirection=movement[direction]?direction:'';if(moveDirection&&!moveFrame)moveFrame=requestAnimationFrame(moveToy);}
 function particleBurst(count=24,color){for(let i=0;i<count;i++){const p=document.createElement('i');p.className='particle';if(color)p.style.background=color;p.style.left=`${50+Math.random()*8-4}vw`;p.style.top=`${42+Math.random()*10-5}vh`;p.style.setProperty('--dx',`${(Math.random()-.5)*70}vw`);p.style.setProperty('--dy',`${(Math.random()-.5)*65}vh`);stage.append(p);p.addEventListener('animationend',()=>p.remove());}}
 function effect(name){
-  if(!toy||hidden)return; toyArt.classList.remove('shake','slash','pop'); void toyArt.offsetWidth;
+  if(!toy||hidden)return; toyArt.classList.remove('shake','slash','pop','squish'); void toyArt.offsetWidth;
   if(name==='ghost-float'){toyArt.classList.add('pop');}
   else if(name==='ghost-stars'){particleBurst(30,'#ffd166');toyArt.classList.add('shake');}
   else if(name==='ghost-dash'){toyArt.classList.add('slash');particleBurst(12,'#70e8ff');}
@@ -43,6 +43,7 @@ function effect(name){
   else if(name==='squeeze-squish'){toyArt.classList.add('pop');}
   else if(name==='squeeze-wave'){toyArt.classList.add('shake');particleBurst(18,'#70e8ff');}
   else if(name==='squeeze-burst'||name==='surprise'){toyArt.classList.add('pop');particleBurst(55,config.toy==='squeeze'?'#ff76c8':'#c9a7ff');}
+  else if(name==='hold-squish'){toyArt.classList.add('squish');}
 }
 async function stopCamera(){clearTimeout(cameraTimer);if(cameraStream)cameraStream.getTracks().forEach(track=>track.stop());cameraStream=null;faceDetector=null;}
 async function startCamera(){
@@ -62,7 +63,7 @@ async function trackHead(video){
 window.addEventListener('mousemove',updateMouseEvents);
 window.addEventListener('blur',()=>{suppressMouseEvents=true;mouseEventsInteractive=false;window.pixpop.setOverlayMouseEvents(false);});
 window.pixpop.loadConfig().then(async c=>{config=c;toy=document.getElementById('toy');renderToy();toy.addEventListener('click',()=>{suppressMouseEvents=true;mouseEventsInteractive=false;window.pixpop.setOverlayMouseEvents(false);});await startCamera();setTimeout(show,700);});
-window.pixpop.onJoystickEvent(data=>{if(data.kind==='direction'){setMoveDirection(data.value);if(data.value)effect(config.actions[data.value]);}if(data.kind==='action'){if(data.value==='DOUBLE'&&eligible){show();effect(config.actions.DOUBLE||'surprise');}else if(data.value==='SINGLE')effect(config.actions.SINGLE);}});
+window.pixpop.onJoystickEvent(data=>{if(data.kind==='direction'){setMoveDirection(data.value);if(data.value)effect(config.actions[data.value]);}if(data.kind==='action'){if(data.value==='DOUBLE'&&eligible){show();effect(config.actions.DOUBLE||'surprise');}else if(data.value==='SINGLE')effect(config.actions.SINGLE);else if(data.value==='LONG')effect('hold-squish');}});
 window.pixpop.onOverlayCommand(async command=>{if(command.type==='config'){config=command.config;renderToy();await stopCamera();await startCamera();show();}});
 window.pixpop.onKeyboardActivity(()=>{hide();eligible=false;clearTimeout(eligibilityTimer);eligibilityTimer=setTimeout(()=>{eligible=true;},2000);});
 window.pixpop.onOverlayHide(()=>hide()); window.pixpop.onOverlayShow(()=>show());

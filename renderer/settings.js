@@ -6,7 +6,7 @@ const effects = {
   radish: [['knife-slash','桌面裂缝'],['knife-rain','飞刀雨'],['knife-spin','旋转挥刀'],['knife-shock','刀光冲击'],['knife-burst','刀片爆散'],['surprise','惊喜闪现']],
   squeeze: [['squeeze-pop','弹性爆开'],['squeeze-stars','果冻星雨'],['squeeze-squish','夸张挤压'],['squeeze-wave','彩色波纹'],['squeeze-burst','糖果喷发'],['surprise','惊喜闪现']]
 };
-let config; let port = null; let reader = null; let buffer = ''; let previousPressed = false; let previousDirection = ''; let singleTimer = null; let lastPress = 0; let connected = false;
+let config; let port = null; let reader = null; let buffer = ''; let previousPressed = false; let previousDirection = ''; let singleTimer = null; let longPressTimer = null; let longPressTriggered = false; let lastPress = 0; let connected = false;
 
 function renderPreview() {
   const toy = $('toy').value; const box = $('preview');
@@ -44,9 +44,16 @@ function processData(data) {
   if (direction !== previousDirection) window.pixpop.sendJoystickEvent({ kind:'direction', value:direction });
   previousDirection = direction;
   if (isDown && !previousPressed) {
+    clearTimeout(longPressTimer); clearTimeout(singleTimer); longPressTriggered = false;
     const now = Date.now();
-    if (now - lastPress < 380) { clearTimeout(singleTimer); window.pixpop.sendJoystickEvent({kind:'action',value:'DOUBLE'}); lastPress = 0; }
-    else { lastPress = now; singleTimer = setTimeout(() => window.pixpop.sendJoystickEvent({kind:'action',value:'SINGLE'}), 400); }
+    if (now - lastPress < 380) { window.pixpop.sendJoystickEvent({kind:'action',value:'DOUBLE'}); lastPress = 0; }
+    else {
+      lastPress = now;
+      longPressTimer = setTimeout(() => { longPressTriggered = true; lastPress = 0; clearTimeout(singleTimer); window.pixpop.sendJoystickEvent({kind:'action',value:'LONG'}); }, 450);
+      singleTimer = setTimeout(() => { if (!longPressTriggered) window.pixpop.sendJoystickEvent({kind:'action',value:'SINGLE'}); }, 500);
+    }
+  } else if (!isDown && previousPressed) {
+    clearTimeout(longPressTimer);
   }
   previousPressed = isDown;
 }
