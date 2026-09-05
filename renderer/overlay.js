@@ -1,6 +1,7 @@
 let config={toy:'ghost',actions:{},camera:false}; let hidden=false; let eligible=true; let toy; let toyArt; let eligibilityTimer; let cameraStream; let cameraTimer; let faceDetector;
 const stage=document.getElementById('stage');
 let mouseEventsInteractive=false; let suppressMouseEvents=false;
+let dragging=false; let dragMoved=false; let ignoreNextClick=false; let dragStartX=0; let dragStartY=0; let dragOriginX=0; let dragOriginY=0;
 let moveDirection=''; let moveFrame; let moveX=0; let moveY=0;
 const movement={N:[0,-1],NE:[.707,-.707],E:[1,0],SE:[.707,.707],S:[0,1],SW:[-.707,.707],W:[-1,0],NW:[-.707,-.707]};
 const moveSpeed=8.4;
@@ -8,21 +9,24 @@ const spinOrder=['N','NE','E','SE','S','SW','W','NW']; let spinDirection=''; let
 function updateMouseEvents(){
   const overToy=!hidden&&toy?.matches(':hover');
   if(!overToy)suppressMouseEvents=false;
-  const interactive=overToy&&!suppressMouseEvents;
+  const interactive=dragging||(overToy&&!suppressMouseEvents);
   if(interactive!==mouseEventsInteractive){mouseEventsInteractive=interactive;window.pixpop.setOverlayMouseEvents(interactive);}
 }
 function toyMarkup(){ if(config.toy==='ghost')return '<div class="toy-art"><div class="ghost-aura"></div><img src="../assets/ghost-cutout.png" alt="幽灵杆"></div>'; if(config.toy==='radish')return '<div class="toy-art"><img class="toy-sprite" src="../assets/radish-knife.png" alt="萝卜刀"></div>'; return '<div class="toy-art"><img class="toy-sprite" src="../assets/squeeze-toy.png" alt="捏捏乐"></div>'; }
 function renderToy(){toy.innerHTML=toyMarkup();toyArt=toy.querySelector('.toy-art');toy.style.setProperty('--move-x',`${moveX}px`);toy.style.setProperty('--move-y',`${moveY}px`);}
 function show(){hidden=false;toy.classList.remove('hidden');eligible=true;if(moveDirection&&!moveFrame)moveFrame=requestAnimationFrame(moveToy);}
 function hide(){hidden=true;toy.classList.add('hidden');updateMouseEvents();}
+function setMoveOffset(nextX,nextY){
+  const width=toy.offsetWidth||180; const height=toy.offsetHeight||260;
+  const baseLeft=window.innerWidth-window.innerWidth*.07-width; const baseTop=window.innerHeight-window.innerHeight*.05-height;
+  moveX=Math.max(-baseLeft,Math.min(window.innerWidth-width-baseLeft,nextX));
+  moveY=Math.max(-baseTop,Math.min(window.innerHeight-height-baseTop,nextY));
+  toy.style.setProperty('--move-x',`${moveX}px`);toy.style.setProperty('--move-y',`${moveY}px`);
+}
 function moveToy(){
   const vector=movement[moveDirection];
   if(!vector||hidden){moveFrame=null;return;}
-  const width=toy.offsetWidth||180; const height=toy.offsetHeight||260;
-  const baseLeft=window.innerWidth-window.innerWidth*.07-width; const baseTop=window.innerHeight-window.innerHeight*.05-height;
-  moveX=Math.max(-baseLeft,Math.min(window.innerWidth-width-baseLeft,moveX+vector[0]*moveSpeed));
-  moveY=Math.max(-baseTop,Math.min(window.innerHeight-height-baseTop,moveY+vector[1]*moveSpeed));
-  toy.style.setProperty('--move-x',`${moveX}px`);toy.style.setProperty('--move-y',`${moveY}px`);
+  setMoveOffset(moveX+vector[0]*moveSpeed,moveY+vector[1]*moveSpeed);
   moveFrame=requestAnimationFrame(moveToy);
 }
 function setMoveDirection(direction){moveDirection=movement[direction]?direction:'';if(moveDirection&&!moveFrame)moveFrame=requestAnimationFrame(moveToy);}
@@ -83,8 +87,11 @@ async function trackHead(video){
   cameraTimer=setTimeout(()=>trackHead(video),100);
 }
 window.addEventListener('mousemove',updateMouseEvents);
-window.addEventListener('blur',()=>{suppressMouseEvents=true;mouseEventsInteractive=false;window.pixpop.setOverlayMouseEvents(false);});
-window.pixpop.loadConfig().then(async c=>{config=c;toy=document.getElementById('toy');renderToy();toy.addEventListener('click',()=>{suppressMouseEvents=true;mouseEventsInteractive=false;window.pixpop.setOverlayMouseEvents(false);});await startCamera();setTimeout(show,700);});
+window.addEventListener('pointermove',event=>{if(!dragging)return;const dx=event.clientX-dragStartX;const dy=event.clientY-dragStartY;if(Math.abs(dx)>2||Math.abs(dy)>2)dragMoved=true;setMoveOffset(dragOriginX+dx,dragOriginY+dy);});
+window.addEventListener('pointerup',event=>{if(!dragging)return;dragging=false;toy?.classList.remove('dragging');toy?.releasePointerCapture?.(event.pointerId);if(dragMoved)ignoreNextClick=true;suppressMouseEvents=true;updateMouseEvents();});
+window.addEventListener('pointercancel',()=>{dragging=false;toy?.classList.remove('dragging');suppressMouseEvents=true;updateMouseEvents();});
+window.addEventListener('blur',()=>{dragging=false;toy?.classList.remove('dragging');suppressMouseEvents=true;mouseEventsInteractive=false;window.pixpop.setOverlayMouseEvents(false);});
+window.pixpop.loadConfig().then(async c=>{config=c;toy=document.getElementById('toy');renderToy();toy.addEventListener('pointerdown',event=>{if(event.button!==0)return;dragging=true;dragMoved=false;dragStartX=event.clientX;dragStartY=event.clientY;dragOriginX=moveX;dragOriginY=moveY;toy.classList.add('dragging');window.pixpop.setOverlayMouseEvents(true);toy.setPointerCapture?.(event.pointerId);event.preventDefault();});toy.addEventListener('click',()=>{if(ignoreNextClick){ignoreNextClick=false;return;}suppressMouseEvents=true;mouseEventsInteractive=false;window.pixpop.setOverlayMouseEvents(false);});await startCamera();setTimeout(show,700);});
 window.pixpop.onJoystickEvent(data=>{if(data.kind==='direction'){setMoveDirection(data.value);const completed=trackClockwiseSpin(data.value);if(completed)effect('spin-crazy');else if(data.value&&!spinEffectActive){effect(config.actions[data.value]);if(data.value==='W'||data.value==='E')stretchBody(data.value);}}if(data.kind==='action'){if(data.value==='DOUBLE'&&eligible){show();effect(config.actions.DOUBLE||'surprise');}else if(data.value==='SINGLE'&&!spinEffectActive)effect(config.actions.SINGLE);else if(data.value==='LONG'&&!spinEffectActive)effect('hold-squish');}});
 window.pixpop.onOverlayCommand(async command=>{if(command.type==='config'){config=command.config;renderToy();await stopCamera();await startCamera();show();}});
 window.pixpop.onKeyboardActivity(()=>{hide();eligible=false;clearTimeout(eligibilityTimer);eligibilityTimer=setTimeout(()=>{eligible=true;},2000);});
