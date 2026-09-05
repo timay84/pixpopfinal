@@ -40,7 +40,8 @@ function pressed(value) { return value === true || value === 1 || value === '1' 
 function axisDirection(x, y) { if (x === null || y === null) return ''; const dx=x-2048, dy=y-2048; if (Math.hypot(dx,dy)<330) return ''; const angle=(Math.atan2(-dy,dx)*180/Math.PI+360)%360; return ['E','NE','N','NW','W','SW','S','SE'][Math.round(angle/45)%8]; }
 function processData(data) {
   const direction = ['N','NE','E','SE','S','SW','W','NW'].includes(data.direction) ? data.direction : axisDirection(data.x,data.y); const isDown = pressed(data.sw);
-  if (direction && direction !== previousDirection) window.pixpop.sendJoystickEvent({ kind:'direction', value:direction });
+  // Send neutral input too, so the overlay can stop a continuous long-press move.
+  if (direction !== previousDirection) window.pixpop.sendJoystickEvent({ kind:'direction', value:direction });
   previousDirection = direction;
   if (isDown && !previousPressed) {
     const now = Date.now();
