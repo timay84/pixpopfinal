@@ -8,6 +8,7 @@ import argparse
 import os
 import sys
 from PIL import Image
+from PIL import ImageDraw, ImageFilter
 
 WATERMARK_BOXES = {
     (1440, 1440): (1188, 1245, 1419, 1416),
@@ -80,6 +81,34 @@ def generate_tray_icon(base_path, output_path, size=64):
     img = Image.open(base_path)
     img = img.resize((size, size), Image.LANCZOS)
     img.save(output_path, 'PNG')
+
+
+def cutout_ghost(source_path, output_path):
+    """Cut the front ghost from ghostfinal.png using a smooth silhouette mask."""
+    source = Image.open(source_path).convert('RGBA')
+    w, h = source.size
+    # Normalized control points follow the front ghost silhouette in ghostfinal.png.
+    points = [
+        (0.50, 0.01), (0.34, 0.05), (0.23, 0.17), (0.18, 0.34),
+        (0.14, 0.55), (0.06, 0.78), (0.08, 0.86), (0.20, 0.94),
+        (0.31, 0.95), (0.37, 0.88), (0.45, 0.94), (0.54, 0.96),
+        (0.63, 0.93), (0.69, 0.87), (0.77, 0.95), (0.88, 0.92),
+        (0.96, 0.82), (0.91, 0.61), (0.87, 0.38), (0.79, 0.16),
+        (0.66, 0.05),
+    ]
+    mask = Image.new('L', (w * 4, h * 4), 0)
+    draw = ImageDraw.Draw(mask)
+    polygon = [(int(x * w * 4), int(y * h * 4)) for x, y in points]
+    draw.polygon(polygon, fill=255)
+    mask = mask.filter(ImageFilter.GaussianBlur(max(2, w // 500)))
+    mask = mask.resize((w, h), Image.Resampling.LANCZOS)
+    source.putalpha(mask)
+    bbox = mask.getbbox()
+    if bbox:
+        pad = max(4, w // 120)
+        bbox = (max(0, bbox[0] - pad), max(0, bbox[1] - pad), min(w, bbox[2] + pad), min(h, bbox[3] + pad))
+        source = source.crop(bbox)
+    source.save(output_path, 'PNG', optimize=True)
 
 
 def cmd_clean(args):
@@ -158,6 +187,10 @@ def main():
     p_tray.add_argument('--output', required=True)
     p_tray.add_argument('--size', type=int, default=64)
 
+    p_cutout = sub.add_parser('cutout-ghost', help='Cut the ghost silhouette from a checkerboard source')
+    p_cutout.add_argument('--source', required=True)
+    p_cutout.add_argument('--output', required=True)
+
     args = parser.parse_args()
     if args.command == 'clean':
         cmd_clean(args)
@@ -167,6 +200,9 @@ def main():
         cmd_batch(args)
     elif args.command == 'trayicon':
         cmd_trayicon(args)
+    elif args.command == 'cutout-ghost':
+        cutout_ghost(args.source, args.output)
+        print(f'Ghost cutout: {args.source} -> {args.output}')
     else:
         parser.print_help()
 

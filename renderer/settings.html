@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>PixPop 设置</title>
+  <style>
+    :root{--bg:#0b1020;--panel:#131b31;--panel2:#192441;--line:#2b3a60;--text:#f3f6ff;--muted:#93a2c3;--cyan:#64f1d4;--pink:#ff76c8;--yellow:#ffd166}
+    *{box-sizing:border-box}body{margin:0;color:var(--text);font:14px/1.5 "Microsoft YaHei",system-ui,sans-serif;background:radial-gradient(circle at 85% 0,#29305d 0,transparent 35%),var(--bg)}
+    .shell{max-width:1060px;margin:auto;padding:28px 32px 34px}.top{display:flex;justify-content:space-between;gap:20px;align-items:flex-start;margin-bottom:22px}.eyebrow{color:var(--cyan);font-size:11px;font-weight:800;letter-spacing:.18em}.top h1{margin:5px 0;font-size:30px;letter-spacing:-.04em}.top p{margin:0;color:var(--muted)}
+    .status{color:var(--muted);padding-top:17px}.status.ok{color:var(--cyan)}
+    .grid{display:grid;grid-template-columns:320px 1fr;gap:16px}.card{padding:20px;border:1px solid var(--line);border-radius:18px;background:linear-gradient(145deg,#17213a,#10172b);box-shadow:0 20px 50px #0003}.card h2{font-size:16px;margin:0 0 16px}.field{margin:14px 0}.field label{display:block;color:var(--muted);font-size:12px;margin-bottom:7px}select,button,input{font:inherit;color:var(--text);border:1px solid var(--line);background:var(--panel2);border-radius:10px;padding:10px 12px}select{width:100%}button{cursor:pointer}button:hover{border-color:var(--cyan)}button.primary{background:var(--cyan);border-color:var(--cyan);color:#081c1b;font-weight:800}.actions{display:flex;gap:8px;flex-wrap:wrap}.actions button{flex:1;min-width:100px}.mode.active{border-color:var(--pink);box-shadow:0 0 0 1px var(--pink) inset}.switch{display:flex;align-items:center;justify-content:space-between;color:var(--muted);padding:13px;border:1px solid var(--line);border-radius:10px}.switch input{width:18px;height:18px;accent-color:var(--cyan)}
+    .preview{min-height:250px;display:grid;place-items:center;border:1px dashed #50638d;border-radius:14px;background:radial-gradient(circle,#25345a 0,transparent 60%);overflow:hidden}.preview img{max-width:90%;max-height:240px;filter:drop-shadow(0 18px 12px #0007)}.toy-art{position:relative;width:150px;height:220px;filter:drop-shadow(0 18px 12px #0007)}.knife{position:absolute;left:48px;top:18px;width:55px;height:175px;border-radius:50% 45% 35% 35%;transform:rotate(20deg);background:linear-gradient(110deg,#ee6b4d,#ffb45e 44%,#c73848 46%,#7c2048);clip-path:polygon(50% 0,100% 26%,70% 61%,83% 100%,17% 100%,30% 61%,0 26%)}.squeeze{position:absolute;left:22px;top:25px;width:108px;height:165px;border-radius:44% 47% 38% 43%;transform:rotate(-7deg);background:linear-gradient(135deg,#78f0dd,#4db7ec 45%,#7658d9);box-shadow:inset -14px -8px 22px #43309a88}.squeeze:before,.squeeze:after{content:"";position:absolute;background:#11183a;border-radius:50%;width:14px;height:22px;top:56px}.squeeze:before{left:30px}.squeeze:after{right:30px}.toy-name{position:absolute;bottom:13px;color:#dfe8ff;font-weight:700;text-align:center;width:100%;font-size:13px;text-shadow:0 2px 6px #000}
+    .mapping{display:grid;grid-template-columns:repeat(2,1fr);gap:9px}.map-row{display:grid;grid-template-columns:64px 1fr;align-items:center;gap:8px;color:var(--muted)}.map-row b{color:var(--text);font-size:12px}.map-row select{padding:8px 7px;font-size:12px}.wide{grid-column:1/-1}.footer{display:flex;justify-content:flex-end;gap:10px;margin-top:16px}.hint{font-size:12px;color:var(--muted);margin:8px 0}.log{height:92px;overflow:auto;background:#080d19;border-radius:9px;padding:10px;color:#9eb1d5;font:11px/1.6 ui-monospace,monospace}.error{color:#ff8295}.success{color:var(--cyan)}
+    @media(max-width:780px){.shell{padding:20px 16px}.top{display:block}.status{padding-top:9px}.grid{grid-template-columns:1fr}.mapping{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header class="top"><div><div class="eyebrow">PIXPOP / SMART DESKTOP TOYS</div><h1>智能解压玩具</h1><p>让摇杆把桌面变成你的游乐场</p></div><div id="status" class="status">串口未连接</div></header>
+    <section class="grid">
+      <aside class="card">
+        <h2>玩具预览</h2><div id="preview" class="preview"></div>
+        <div class="field"><label for="toy">选择玩具</label><select id="toy"><option value="ghost">幽灵杆</option><option value="radish">萝卜刀</option><option value="squeeze">捏捏乐</option></select></div>
+        <div class="field"><label for="baud">ESP32 波特率</label><select id="baud"><option value="115200">115200 baud</option><option value="9600">9600 baud</option><option value="57600">57600 baud</option></select></div>
+        <button id="connect" class="primary" style="width:100%">连接 ESP32</button>
+        <p class="hint">协议沿用 esp32code.cpp：每行一条 JSON，包含 x、y、sw，可选 direction。</p>
+        <div id="serialLog" class="log">等待连接设备...</div>
+      </aside>
+      <section class="card">
+        <h2>十种操作 · 特效映射</h2><p class="hint">单击和双击由电脑端根据 SW 按下信号识别。</p>
+        <div id="mapping" class="mapping"></div>
+        <div class="field wide"><label>快速配置</label><div class="actions"><button class="mode" data-mode="default">默认模式</button><button class="mode" data-mode="cool">酷炫模式</button><button class="mode" data-mode="relief">解压模式</button></div></div>
+        <div class="field wide"><label class="switch">摄像头追踪（允许后让玩具的眼睛追随你的头部）<input id="camera" type="checkbox"></label></div>
+        <p id="cameraHint" class="hint"></p>
+        <div class="footer"><button id="close">关闭设置</button><button id="save" class="primary">保存并启动玩具</button></div>
+      </section>
+    </section>
+  </main>
+  <script src="settings.js"></script>
+</body>
+</html>
