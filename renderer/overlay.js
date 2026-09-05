@@ -48,7 +48,7 @@ function trackClockwiseSpin(direction){
 }
 function particleBurst(count=24,color){for(let i=0;i<count;i++){const p=document.createElement('i');p.className='particle';if(color)p.style.background=color;p.style.left=`${50+Math.random()*8-4}vw`;p.style.top=`${42+Math.random()*10-5}vh`;p.style.setProperty('--dx',`${(Math.random()-.5)*70}vw`);p.style.setProperty('--dy',`${(Math.random()-.5)*65}vh`);stage.append(p);p.addEventListener('animationend',()=>p.remove());}}
 function effect(name){
-  if(!toy||hidden)return; if(!spinEffectActive||name==='spin-crazy')toyArt.classList.remove('shake','slash','pop','spin-crazy','body-stretch-left','body-stretch-right'); void toyArt.offsetWidth;
+  if(!toy||hidden)return; if(!spinEffectActive||name==='spin-crazy')toyArt.classList.remove('shake','slash','pop','squish','spin-crazy','body-stretch-left','body-stretch-right'); void toyArt.offsetWidth;
   if(name==='ghost-float'){toyArt.classList.add('pop');}
   else if(name==='ghost-stars'){particleBurst(30,'#ffd166');toyArt.classList.add('shake');}
   else if(name==='ghost-dash'){toyArt.classList.add('slash');particleBurst(12,'#70e8ff');}
