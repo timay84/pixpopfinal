@@ -8,6 +8,7 @@ contextBridge.exposeInMainWorld('pixpop', {
   quit: () => ipcRenderer.send('app-quit'),
   sendJoystickEvent: (event) => ipcRenderer.send('joystick-event', event),
   sendOverlayCommand: (command) => ipcRenderer.send('overlay-command', command),
+  setOverlayMouseEvents: (interactive) => ipcRenderer.send('overlay-mouse-events', interactive),
   onJoystickEvent: (callback) => ipcRenderer.on('joystick-event', (_event, data) => callback(data)),
   onOverlayCommand: (callback) => ipcRenderer.on('overlay-command', (_event, data) => callback(data)),
   onKeyboardActivity: (callback) => ipcRenderer.on('keyboard-activity', callback),

@@ -52,6 +52,7 @@ function createOverlay() {
     webPreferences: { preload: path.join(__dirname, 'preload.js'), contextIsolation: true, nodeIntegration: false }
   });
   overlayWindow.setAlwaysOnTop(true, 'floating');
+  overlayWindow.setIgnoreMouseEvents(true, { forward: true });
   overlayWindow.loadFile(path.join(__dirname, 'renderer', 'overlay.html'));
   overlayWindow.on('closed', () => { overlayWindow = null; });
 }
@@ -95,6 +96,11 @@ ipcMain.on('settings-close', () => { settingsWindow?.hide(); overlayWindow?.webC
 ipcMain.on('app-quit', () => { quitting = true; app.quit(); });
 ipcMain.on('joystick-event', (_event, data) => overlayWindow?.webContents.send('joystick-event', data));
 ipcMain.on('overlay-command', (_event, command) => overlayWindow?.webContents.send('overlay-command', command));
+ipcMain.on('overlay-mouse-events', (_event, interactive) => {
+  if (overlayWindow && !overlayWindow.isDestroyed()) {
+    overlayWindow.setIgnoreMouseEvents(!interactive, { forward: true });
+  }
+});
 
 app.whenReady().then(() => {
   // Web Serial in Electron requires the main process to approve a selected device.
