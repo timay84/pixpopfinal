@@ -16,7 +16,7 @@ let config; let port = null; let reader = null; let buffer = ''; let previousPre
 
 function renderPreview() {
   const toy = $('toy').value; const box = $('preview');
-  box.innerHTML = toy === 'ghost' ? '<div class="boo-preview" aria-label="BooFloat 3D 幽灵预览"><span>BOOFLOAT / 3D</span></div>' : toy === 'radish' ? '<img class="toy-sprite" src="../assets/radish-knife.png" alt="萝卜刀预览">' : '<img class="toy-sprite" src="../assets/squeeze-toy.png" alt="捏捏乐预览">';
+  box.innerHTML = toy === 'ghost' ? '<img class="boo-preview-image" src="../BooFloat-Technician-Handoff-v1 4/motion-assets/01-idle.png" alt="BooFloat 幽灵预览">' : toy === 'radish' ? '<img class="toy-sprite" src="../assets/radish-knife.png" alt="萝卜刀预览">' : '<img class="toy-sprite" src="../assets/squeeze-toy.png" alt="捏捏乐预览">';
 }
 function renderMapping() {
   const list = effects[$('toy').value];

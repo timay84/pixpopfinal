@@ -26,6 +26,7 @@
       "smallicon.png",
       "renderer/**/*",
       "assets/**/*",
+      "BooFloat-Technician-Handoff-v1 4/motion-assets/01-idle.png",
       "boo-overlay-build/**/*"
     ],
     "win": {
