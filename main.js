@@ -53,7 +53,8 @@ function createOverlay() {
   });
   overlayWindow.setAlwaysOnTop(true, 'floating');
   overlayWindow.setIgnoreMouseEvents(true, { forward: true });
-  overlayWindow.loadFile(path.join(__dirname, 'renderer', 'overlay.html'));
+  const booOverlay = path.join(__dirname, 'boo-overlay-build', 'overlay.html');
+  overlayWindow.loadFile(fs.existsSync(booOverlay) ? booOverlay : path.join(__dirname, 'renderer', 'overlay.html'));
   overlayWindow.on('closed', () => { overlayWindow = null; });
 }
 

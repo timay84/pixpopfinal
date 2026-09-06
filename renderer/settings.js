@@ -41,6 +41,10 @@ function pressed(value) { return value === true || value === 1 || value === '1' 
 function axisDirection(x, y) { if (x === null || y === null) return ''; const dx=x-2048, dy=y-2048; if (Math.hypot(dx,dy)<330) return ''; const angle=(Math.atan2(-dy,dx)*180/Math.PI+360)%360; return ['E','NE','N','NW','W','SW','S','SE'][Math.round(angle/45)%8]; }
 function processData(data) {
   const direction = ['N','NE','E','SE','S','SW','W','NW'].includes(data.direction) ? data.direction : axisDirection(data.x,data.y); const isDown = pressed(data.sw);
+  const directionVector = {N:[0,-1],NE:[0.707,-0.707],E:[1,0],SE:[0.707,0.707],S:[0,1],SW:[-0.707,0.707],W:[-1,0],NW:[-0.707,-0.707]}[direction] || [0,0];
+  const normalizedX = data.x === null ? directionVector[0] : Math.abs(data.x) <= 1.25 ? data.x : (data.x - 2048) / 2048;
+  const normalizedY = data.y === null ? directionVector[1] : Math.abs(data.y) <= 1.25 ? data.y : (data.y - 2048) / 2048;
+  window.pixpop.sendJoystickEvent({ kind:'sample', value:{ x:normalizedX, y:normalizedY, pressure:isDown ? 1 : 0, pressed:isDown } });
   // Send neutral input too, so the overlay can stop a continuous long-press move.
   if (direction !== previousDirection) window.pixpop.sendJoystickEvent({ kind:'direction', value:direction });
   previousDirection = direction;

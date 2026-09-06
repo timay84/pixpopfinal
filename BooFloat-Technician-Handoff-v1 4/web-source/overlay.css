@@ -1,0 +1,35 @@
+html,
+body,
+#overlay-root {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+  background: transparent;
+  pointer-events: none;
+}
+
+#overlay-root {
+  position: relative;
+}
+
+#boo-stage {
+  position: absolute;
+  right: 7vw;
+  bottom: 5vh;
+  width: 280px;
+  height: 340px;
+  pointer-events: auto;
+  touch-action: none;
+  cursor: grab;
+}
+
+#boo-stage:active {
+  cursor: grabbing;
+}
+
+#boo-stage canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
