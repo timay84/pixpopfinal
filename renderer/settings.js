@@ -2,30 +2,29 @@ const $ = (id) => document.getElementById(id);
 const directions = ['N','NE','E','SE','S','SW','W','NW','SINGLE','DOUBLE'];
 const labels = {N:'上',NE:'右上',E:'右',SE:'右下',S:'下',SW:'左下',W:'左',NW:'左上',SINGLE:'摇杆单击',DOUBLE:'摇杆双击'};
 const effects = {
-  ghost: [['ghost-float','幽灵漂浮'],['ghost-stars','星星爆散'],['ghost-dash','幽灵冲刺'],['ghost-burst','灵魂爆炸'],['ghost-fall','灵魂飘落'],['surprise','惊喜闪现']],
-  radish: [['knife-slash','桌面裂缝'],['knife-rain','飞刀雨'],['knife-spin','旋转挥刀'],['knife-shock','刀光冲击'],['knife-burst','刀片爆散'],['surprise','惊喜闪现']],
-  squeeze: [['squeeze-pop','弹性爆开'],['squeeze-stars','果冻星雨'],['squeeze-squish','夸张挤压'],['squeeze-wave','彩色波纹'],['squeeze-burst','糖果喷发'],['surprise','惊喜闪现']]
+  ghost: [['idle','轻轻漂浮'],['breathe','深呼吸'],['tilt-left','向左牵引'],['tilt-right','向右牵引'],['stretch','弹力布幔'],['trail','超长拖尾'],['comet','彗星冲刺'],['orbit','绕圈漂浮'],['press','软软压扁'],['pulse','蓄力震颤'],['rebound','弹跳回弹'],['ripple','涟漪扩散'],['echo','幽灵分身'],['sparkle','星屑绽放'],['blink','眨眼点头'],['twist','旋风拧转'],['burst','极限爆开'],['reform','碎光重生']],
+  radish: [['idle','静置回弹'],['tilt-left','左倾牵引'],['tilt-right','右倾牵引'],['stretch','刀身拉伸'],['trail','刀光拖尾'],['comet','萝卜冲刺'],['orbit','旋转挥刀'],['press','蓄力下压'],['pulse','刀锋震颤'],['rebound','弹性回弹'],['ripple','冲击涟漪'],['echo','残影分身'],['sparkle','刀光闪烁'],['blink','快速闪动'],['twist','旋拧挥刀'],['burst','刀片爆散'],['reform','碎片重组']],
+  squeeze: [['idle','果冻漂浮'],['tilt-left','向左揉捏'],['tilt-right','向右揉捏'],['stretch','弹性拉伸'],['trail','果冻拖尾'],['comet','果冻冲刺'],['orbit','绕圈摇摆'],['press','软软压扁'],['pulse','蓄力颤动'],['rebound','弹性回弹'],['ripple','彩色涟漪'],['echo','果冻分身'],['sparkle','星屑绽放'],['blink','眨眼反馈'],['twist','旋转扭动'],['burst','糖果爆开'],['reform','果冻重组']]
+};
+const modeTables = {
+  default: ['breathe','tilt-right','stretch','trail','press','tilt-left','comet','tilt-left','sparkle','reform'],
+  cool: ['comet','trail','orbit','twist','pulse','echo','burst','orbit','sparkle','reform'],
+  relief: ['breathe','rebound','ripple','rebound','press','ripple','echo','rebound','press','reform'],
+  gentle: ['breathe','tilt-right','tilt-left','stretch','press','tilt-left','breathe','press','sparkle','reform']
 };
 let config; let port = null; let reader = null; let buffer = ''; let previousPressed = false; let previousDirection = ''; let singleTimer = null; let longPressTimer = null; let longPressTriggered = false; let lastPress = 0; let connected = false;
 
 function renderPreview() {
   const toy = $('toy').value; const box = $('preview');
-  box.innerHTML = toy === 'ghost' ? '<img src="../assets/ghost-cutout.png" alt="幽灵杆预览">' : toy === 'radish' ? '<img class="toy-sprite" src="../assets/radish-knife.png" alt="萝卜刀预览">' : '<img class="toy-sprite" src="../assets/squeeze-toy.png" alt="捏捏乐预览">';
+  box.innerHTML = toy === 'ghost' ? '<div class="boo-preview" aria-label="BooFloat 3D 幽灵预览"><span>BOOFLOAT / 3D</span></div>' : toy === 'radish' ? '<img class="toy-sprite" src="../assets/radish-knife.png" alt="萝卜刀预览">' : '<img class="toy-sprite" src="../assets/squeeze-toy.png" alt="捏捏乐预览">';
 }
 function renderMapping() {
   const list = effects[$('toy').value];
   $('mapping').innerHTML = directions.map(key => `<div class="map-row"><b>${labels[key]}</b><select data-action="${key}">${list.map(([value, label]) => `<option value="${value}">${label}</option>`).join('')}</select></div>`).join('');
-  directions.forEach(key => { const el = document.querySelector(`[data-action="${key}"]`); const selected = config.actions[key]; el.value = list.some(([value]) => value === selected) ? selected : list[0][0]; config.actions[key] = el.value; });
+  directions.forEach((key, index) => { const el = document.querySelector(`[data-action="${key}"]`); const selected = config.actions[key]; const fallback = modeTables[config.mode]?.[index] || list[0][0]; el.value = list.some(([value]) => value === selected) ? selected : list.some(([value]) => value === fallback) ? fallback : list[0][0]; config.actions[key] = el.value; });
 }
 function applyMode(mode) {
-  const toy = $('toy').value; const names = effects[toy].map(x => x[0]);
-  const tables = {
-    default: [0,1,2,3,4,1,2,3,0,5],
-    cool: [2,3,1,4,2,3,1,4,2,5],
-    relief: [4,4,3,4,4,3,4,3,0,5],
-    gentle: [0,0,0,0,0,0,0,0,0,5]
-  };
-  directions.forEach((key, i) => config.actions[key] = names[tables[mode][i] % names.length]);
+  directions.forEach((key, i) => config.actions[key] = modeTables[mode][i]);
   config.mode = mode; renderMapping(); document.querySelectorAll('.mode').forEach(b => b.classList.toggle('active', b.dataset.mode === mode));
 }
 function log(message, className = '') { const line = document.createElement('div'); line.className = className; line.textContent = message; $('serialLog').append(line); $('serialLog').scrollTop = $('serialLog').scrollHeight; while ($('serialLog').children.length > 30) $('serialLog').firstChild.remove(); }

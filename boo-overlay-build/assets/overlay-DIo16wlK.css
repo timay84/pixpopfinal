@@ -1,1 +1,0 @@
-html,body,#overlay-root{pointer-events:none;background:0 0;width:100%;height:100%;margin:0;overflow:hidden}#overlay-root{position:relative}#boo-stage{pointer-events:auto;touch-action:none;cursor:grab;width:280px;height:340px;position:absolute;bottom:5vh;right:7vw}#boo-stage:active{cursor:grabbing}#boo-stage canvas{width:100%;height:100%;display:block}

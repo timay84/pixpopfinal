@@ -8,6 +8,7 @@ declare global {
     pixpop: {
       loadConfig: () => Promise<unknown>;
       onJoystickEvent: (callback: (event: OverlayEvent) => void) => void;
+      onOverlayCommand: (callback: (command: { type: string; config?: ToyConfig }) => void) => void;
       onKeyboardActivity: (callback: () => void) => void;
       onOverlayHide: (callback: () => void) => void;
       onOverlayShow: (callback: () => void) => void;
@@ -17,7 +18,8 @@ declare global {
 }
 
 type OverlaySample = InputSample & { pressed?: boolean };
-type OverlayEvent = { kind: 'sample' | 'action'; value: OverlaySample | string };
+type ToyConfig = { toy?: 'ghost' | 'radish' | 'squeeze'; actions?: Record<string, string> };
+type OverlayEvent = { kind: 'sample' | 'action' | 'direction'; value: OverlaySample | string };
 
 const root = document.getElementById('overlay-root');
 if (!root) throw new Error('BooFloat overlay root is missing');
@@ -29,6 +31,7 @@ root.append(stage);
 const motion: { current: Motion } = { current: newMotion('idle') };
 const lighting = { current: 'light' as const };
 const driver = createInputController(motion);
+let config: ToyConfig = { toy: 'ghost', actions: {} };
 let hidden = false;
 let inputActive = false;
 let lastTick = performance.now();
@@ -37,6 +40,46 @@ let dragging = false;
 let dragMoved = false;
 let dragStart = { x: 0, y: 0 };
 let dragOffset = { x: 0, y: 0 };
+let legacyArt: HTMLDivElement | undefined;
+let cleanupLegacy: (() => void) | undefined;
+
+function createLegacyToy(toy: 'radish' | 'squeeze') {
+  const art = document.createElement('div');
+  art.className = 'legacy-art float';
+  const image = document.createElement('img');
+  image.src = toy === 'radish' ? '../assets/radish-knife.png' : '../assets/squeeze-toy.png';
+  image.alt = toy === 'radish' ? '萝卜刀' : '捏捏乐';
+  art.append(image);
+  stage.append(art);
+  legacyArt = art;
+  return () => {
+    art.remove();
+    if (legacyArt === art) legacyArt = undefined;
+  };
+}
+
+function legacyEffect(mode: string) {
+  if (!legacyArt) return;
+  const effect = mode === 'tilt-left' ? 'tilt-left' : mode === 'tilt-right' ? 'tilt-right' :
+    ['stretch'].includes(mode) ? 'stretch' : ['trail', 'comet'].includes(mode) ? 'dash' :
+    ['orbit', 'twist'].includes(mode) ? 'spin' : ['press'].includes(mode) ? 'squish' :
+    ['pulse'].includes(mode) ? 'pulse' : ['rebound', 'reform'].includes(mode) ? 'pop' :
+    ['ripple'].includes(mode) ? 'wave' : ['echo'].includes(mode) ? 'echo' :
+    ['sparkle', 'blink'].includes(mode) ? 'sparkle' : ['burst'].includes(mode) ? 'burst' : 'float';
+  legacyArt.classList.remove('float', 'tilt-left', 'tilt-right', 'stretch', 'dash', 'spin', 'squish', 'pulse', 'pop', 'wave', 'echo', 'sparkle', 'burst');
+  void legacyArt.offsetWidth;
+  legacyArt.classList.add(effect);
+}
+
+function renderToy(next: ToyConfig) {
+  config = next;
+  cleanupScene?.();
+  cleanupScene = undefined;
+  cleanupLegacy?.();
+  cleanupLegacy = undefined;
+  if (config.toy === 'ghost') cleanupScene = createGhostScene(stage, motion, false, lighting);
+  else cleanupLegacy = createLegacyToy(config.toy || 'radish');
+}
 
 function setVisible(visible: boolean) {
   hidden = !visible;
@@ -54,21 +97,30 @@ function play(mode: Mode) {
 
 function handleInput(event: OverlayEvent) {
   if (event.kind === 'sample' && typeof event.value !== 'string') {
-    if (hidden) return;
+    if (hidden || config.toy !== 'ghost') return;
     const sample = event.value;
     driver.set({ x: sample.x, y: sample.y, pressure: sample.pressure }, performance.now());
     inputActive = true;
     return;
   }
 
+  if (event.kind === 'direction' && typeof event.value === 'string' && !hidden && config.toy !== 'ghost') {
+    const mode = config.actions?.[event.value] || (event.value === 'S' ? 'press' : 'tilt-right');
+    legacyEffect(mode);
+    return;
+  }
+
   if (event.kind === 'action' && typeof event.value === 'string') {
     if (event.value === 'DOUBLE') {
       setVisible(true);
-      play('reform');
+      if (config.toy === 'ghost') play('reform');
+      else legacyEffect(config.actions?.DOUBLE || 'reform');
     } else if (!hidden && event.value === 'SINGLE') {
-      play('sparkle');
+      if (config.toy === 'ghost') play('sparkle');
+      else legacyEffect(config.actions?.SINGLE || 'sparkle');
     } else if (!hidden && event.value === 'LONG') {
-      play('pulse');
+      if (config.toy === 'ghost') play('pulse');
+      else legacyEffect('pulse');
     }
   }
 }
@@ -110,7 +162,10 @@ function stopDragging(event?: PointerEvent) {
 stage.addEventListener('pointerup', stopDragging);
 stage.addEventListener('pointercancel', stopDragging);
 stage.addEventListener('click', () => {
-  if (!dragMoved && !hidden) play('sparkle');
+  if (!dragMoved && !hidden) {
+    if (config.toy === 'ghost') play('sparkle');
+    else legacyEffect('sparkle');
+  }
   dragMoved = false;
 });
 
@@ -118,9 +173,15 @@ window.pixpop.onJoystickEvent((event: OverlayEvent) => handleInput(event));
 window.pixpop.onKeyboardActivity(() => setVisible(false));
 window.pixpop.onOverlayHide(() => setVisible(false));
 window.pixpop.onOverlayShow(() => setVisible(true));
+window.pixpop.onOverlayCommand((command) => {
+  if (command.type === 'config' && command.config) {
+    renderToy(command.config);
+    setVisible(true);
+  }
+});
 
-window.pixpop.loadConfig().then(() => {
-  cleanupScene = createGhostScene(stage, motion, false, lighting);
+window.pixpop.loadConfig().then((loaded) => {
+  renderToy(loaded as ToyConfig);
   setTimeout(() => setVisible(true), 700);
   requestAnimationFrame(tick);
 });
